@@ -1,0 +1,20 @@
+C:\Users\NAK\source\repos\BoardGame\BoardGame\bin\Debug\BoardGame.exe.config
+C:\Users\NAK\source\repos\BoardGame\BoardGame\bin\Debug\BoardGame.exe
+C:\Users\NAK\source\repos\BoardGame\BoardGame\bin\Debug\BoardGame.pdb
+C:\Users\NAK\source\repos\BoardGame\BoardGame\obj\Debug\BoardGame.csproj.AssemblyReference.cache
+C:\Users\NAK\source\repos\BoardGame\BoardGame\obj\Debug\BoardGame.Form1.resources
+C:\Users\NAK\source\repos\BoardGame\BoardGame\obj\Debug\BoardGame.Properties.Resources.resources
+C:\Users\NAK\source\repos\BoardGame\BoardGame\obj\Debug\BoardGame.csproj.GenerateResource.cache
+C:\Users\NAK\source\repos\BoardGame\BoardGame\obj\Debug\BoardGame.csproj.CoreCompileInputs.cache
+C:\Users\NAK\source\repos\BoardGame\BoardGame\obj\Debug\BoardGame.exe
+C:\Users\NAK\source\repos\BoardGame\BoardGame\obj\Debug\BoardGame.pdb
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\bin\Debug\BoardGame.exe.config
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\bin\Debug\BoardGame.exe
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\bin\Debug\BoardGame.pdb
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\obj\Debug\BoardGame.csproj.AssemblyReference.cache
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\obj\Debug\BoardGame.Form1.resources
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\obj\Debug\BoardGame.Properties.Resources.resources
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\obj\Debug\BoardGame.csproj.GenerateResource.cache
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\obj\Debug\BoardGame.csproj.CoreCompileInputs.cache
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\obj\Debug\BoardGame.exe
+D:\Programming\C# project\Tic Tac Toe\TictacToe\BoardGame\obj\Debug\BoardGame.pdb
