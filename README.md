@@ -1,2 +1,2 @@
-You can download to play Chess Board game h</br>
+You can download to play Chess Board game </br>
 
