@@ -42,14 +42,14 @@
     </dependentAssembly>
   </dependency>
   <dependency>
-    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="WinForms Chess.exe" size="217600">
+    <dependentAssembly dependencyType="install" allowDelayedBinding="true" codebase="WinForms Chess.exe" size="218112">
       <assemblyIdentity name="WinForms Chess" version="1.0.0.0" language="neutral" processorArchitecture="msil" />
       <hash>
         <dsig:Transforms>
           <dsig:Transform Algorithm="urn:schemas-microsoft-com:HashTransforms.Identity" />
         </dsig:Transforms>
         <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha256" />
-        <dsig:DigestValue>4hDL3ivJwJihr6i/hEh6T8HRqO2GooWaLzcKwRmvaHo=</dsig:DigestValue>
+        <dsig:DigestValue>WsYrKGofXSNzPUDTAKaCHi7zRWWAS2A5/l+I0YYnW70=</dsig:DigestValue>
       </hash>
     </dependentAssembly>
   </dependency>

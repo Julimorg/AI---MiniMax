@@ -17,6 +17,10 @@ namespace WinFormsChess
         bool whitePlayerTurn = true;                                //track who needs to move
         bool isFirstClick = true;                                   //differentiate between selecting a piece to move and selecting a destination square    
         bool foundCheck = false;                                    //denote that the active player is in check
+        bool isFindingCheck = false;
+        //TODO: (Khang) lý do ghi thêm hàm này là để lưu lại các foundcheck possible move là có cause check hay không
+        bool isChooseEndRow = false;
+
         int candidateMoves = 0;                                     //track the number of moves the active player could make (ignoring those that put himself into check)
         int movesThatCauseCheck = 0;                                //if (candidateMoves-movesThatCauseCheck)==0, the game is in CheckMate 
         int whiteKingRow = 7, whiteKingCol = 4;                     //track the position of the white king                   
@@ -29,19 +33,20 @@ namespace WinFormsChess
 
         public class LocationSelected
         {
+
+            public pictureBoxInformation currentPiece;
             public int row;
             public int col;
         }
 
 
-        List<LocationSelected> PossibleMove = new List<LocationSelected>(); 
+        List<LocationSelected> PossibleMove = new List<LocationSelected>();
         //TODO: (Khang) hàm sẽ chạy trong các TH xảy ra trong quá trình chơi
-        List<LocationSelected> PossibleCauseCheck = new List<LocationSelected>();
-        //TODO: (Khang) hàm sẽ chạy trong các TH xảy ra ở player khác (sau khi player trước đó đã chọn destination)
+
 
         System.Drawing.Color lightSquareColor = System.Drawing.Color.LightYellow;   //the first 2 variables control the background color of the board squares
         System.Drawing.Color darkSquareColor = System.Drawing.Color.SandyBrown;     //^
-        System.Drawing.Color activePieceColor=System.Drawing.Color.Red;             //color to highlight the active piece
+        System.Drawing.Color activePieceColor = System.Drawing.Color.Red;             //color to highlight the active piece
         System.Drawing.Color checkPieceColor = System.Drawing.Color.Purple;         //color to highlight the pieces causing check (the king and an opponent piece)
         System.Drawing.Color promotionPieceColor = System.Drawing.Color.Green;      //color to highlight a pawn that has reached the opposite side and can be promoted
         System.Drawing.Color reachableSquareColor = System.Drawing.Color.Pink;      //color to highlight all of the squares the active piece can reach
@@ -52,43 +57,43 @@ namespace WinFormsChess
         PictureBox copyOfSecondSelection = new PictureBox();        //^ but for the second selected picturebox
         PictureBox pieceCausingCheck = null;                        //allows us to highlight a piece that prevents a move being made
 
+
+
         private void onClick(object sender, EventArgs e)
         {
+            Console.WriteLine("Current click: {0}", isFirstClick);
             if (isFirstClick)       //player has clicked on a piece to select it for movement
             {
+                PossibleMove.Clear();
+                Console.WriteLine("Player turn...");
+
                 firstSelection = sender as PictureBox;                                              //grab the clicked picturebox
                 //TODO: (Khang) hàm này sẽ chọn ra TH xảy ra khi player chọn 1 con bất kỳ
                 string pieceTag = (string)firstSelection.Tag;
                 Console.WriteLine("first selection tag was " + firstSelection.Tag);
-                if (whitePlayerTurn && pieceTag[0] == 'w' || !whitePlayerTurn && pieceTag[0] == 'b')    //if they chose one of their own pieces
+
+                if (whitePlayerTurn && pieceTag[0] == 'w')
                 {
-                    /*
-                    TODO: (Khang) chọn lượt chơi
-                    đoạn này sẽ coi xem các gt của người chơi là gì 
-                    player == whitePlayerTurn
-                    computer == !whitePlayerTurn
-                 Sẽ khá khó hỉu nếu sử dụng logic trên nên có thể giải thích đơn giản như thế này:
-                    nếu người chơi là đang là white hoặc ngược lại người chơi đó là black
-                     */
+
                     cloneFirstSelectionPictureBox();                                                //store the attributes of the first picturebox before changing it
                     firstSelection.BackColor = activePieceColor;                            //highlight the cell                                                               
-                    //TODO: dòng này sẽ cho phép coi các đoạn đường có thể xảy ra, 
+                                                                                            //TODO: dòng này sẽ cho phép coi các đoạn đường có thể xảy ra, 
                     scanForAvailableMoves(firstSelection, false);                                          //go though and find squares the piece can move to (and highlight them)
-                    //TODO: Importain(scanForAvailableMoves -> findReachableSquares)
-                    Console.WriteLine("Here");
+                                                                                                           //TODO: Importain(scanForAvailableMoves -> findReachableSquares)
                     candidateMoves = 0;                                                             //reset this for future use
                     movesThatCauseCheck = 0;                                                        //^
-                    //TODO: dòng này sẽ lưu các TH xảy ra (bao gồm checkmate và chiếu)
+                                                                                                    //TODO: dòng này sẽ lưu các TH xảy ra (bao gồm checkmate và chiếu)
                     isFirstClick = false;                                                           //note that we are moving on to the second click next time
 
                     Console.WriteLine(PossibleMove.Count);
                     callList(PossibleMove);
+
                 }
             }
             else                                                                                    //player has chosen a destination square to try to move a piece to
             {
+                Console.WriteLine("Running...");
                 PossibleMove.Clear();
-                PossibleCauseCheck.Clear(); 
                 //TODO: lúc này là người chơi (cả 2) đều lựa chọn vị trí để đi
                 secondSelection = sender as PictureBox;                                             //grab the clicked picturebox
                 isFirstClick = true;
@@ -127,9 +132,9 @@ namespace WinFormsChess
                         movesThatCauseCheck = 0;                                        //reset before selectAllPieces()
                         candidateMoves = 0;                                             //^
                         selectAllPieces();                                              //goes through all of the possible moves of the active player (not the one who just moved)  
-                        
-                        callList(PossibleCauseCheck);                                                            //...and finds the total number of candidate moves and the number that put themself in check
-                        
+
+                        callList(PossibleMove);                                                            //...and finds the total number of candidate moves and the number that put themself in check
+
                         unHighlightMoves();
                         if (movesThatCauseCheck == candidateMoves)                      //the player who just moved has left his opponent no viable moves -> CheckMate       
                         {
@@ -138,30 +143,83 @@ namespace WinFormsChess
                             checkMateSequence();
                         }
                     }
-                    updateDisplay();                                                    //reflect whose turn it is and the number of moves made
-                                                                                        //TODO: dòng này chỉ để update vị trí đã đi và trả về
-                    Console.WriteLine("Test");
+                    updateDisplay();                                                    //reflect whose turn it is and the number of moves made 
                 }
+
             }
-            Control endRowControl = checkEndRows();                                     //if a pawn has reached the opposite end of the board this returns that control, otherwise null
+            Control endRowControl = checkEndRows();
+
             if (endRowControl != null)
             {
+                isChooseEndRow = true;
+                Console.WriteLine("1");
                 //TODO: pawn tới đích sẽ chạy dòng này (phong tướng)
                 whitePlayerTurn = !whitePlayerTurn;     //temporarily switch back to whitePlayerTurn to make switchToPromotionMenu() more inutitive. It is switched back in the function
                 switchtoPromotionMenu();   //pops up a menu where the played can choose a piece to promote their pawn into, updates the pieces and tests if the promotion causes checkmate
+                Console.WriteLine("Return to {0}", whitePlayerTurn);
             }
-            
-            
+
+
+            Console.WriteLine("bUG {0}", whitePlayerTurn);
+
+
+            bool BotTurn = !whitePlayerTurn ? true : false;
+            //TODO: (Khang + source từ Khoa) sử dụng hàm này để biểu thị lượt sau là của người chơi AI
+            if (BotTurn)
+            {
+                onBot();
+
+
+                endRowControl = checkEndRows();
+                if (endRowControl != null)
+                {
+                    Console.WriteLine("2");
+                    //TODO: pawn tới đích sẽ chạy dòng này (phong tướng)
+                    whitePlayerTurn = !whitePlayerTurn;     //temporarily switch back to whitePlayerTurn to make switchToPromotionMenu() more inutitive. It is switched back in the function
+                    switchtoPromotionMenu();   //pops up a menu where the played can choose a piece to promote their pawn into, updates the pieces and tests if the promotion causes checkmate
+                    Console.WriteLine("Return to {0}", whitePlayerTurn);
+                }
+                Console.WriteLine("BOT Done");
+
+            }
+
+
+
+        }
+
+        public void onBot()
+        {
+            Console.WriteLine("Bot Turn....");
+            Random random = new Random();
+            int r = random.Next(PossibleMove.Count);
+            LocationSelected bot_choice = PossibleMove[r];
+            Console.WriteLine("{0} AND {1}", bot_choice.col, bot_choice.row);
+            firstSelection = (PictureBox)gridTLP.GetControlFromPosition(bot_choice.currentPiece.startCol, bot_choice.currentPiece.startRow);
+            cloneFirstSelectionPictureBox();
+            secondSelection = (PictureBox)gridTLP.GetControlFromPosition(bot_choice.col, bot_choice.row);
+            cloneSecondSelectionPictureBox();
+            updatePictureBoxesAfterMove();
+            updateDisplay();
+            whitePlayerTurn = !whitePlayerTurn;
+
+
+
+        }
+        public void Minimax()
+        {
+
         }
 
         public void callList(List<LocationSelected> PossibleSelected)
         {
-            Console.Write("{");
+            Console.WriteLine("All List: ");
             for (int i = 0; i < PossibleSelected.Count; i++)
             {
-                Console.Write("(" + PossibleSelected[i].row + ", " +PossibleSelected[i].col + "), ");
+                Console.WriteLine((i + 1) + ". " + PossibleSelected[i].currentPiece.pieceColor + PossibleSelected[i].currentPiece.pieceType +
+                " from (" + PossibleSelected[i].currentPiece.startRow + ", " + PossibleSelected[i].currentPiece.startCol + "), " +
+                " to (" + PossibleSelected[i].row + ", " + PossibleSelected[i].col + "), ");
             }
-            Console.WriteLine("}");
+            Console.WriteLine();
         }
 
         public void cloneFirstSelectionPictureBox()
@@ -187,10 +245,10 @@ namespace WinFormsChess
         public void undoMove()
         {
             secondSelection.BackColor = activePieceColor;                                                       //highlight the current piece
-            pieceCausingCheck.BackColor= checkPieceColor;                                                   //highlight the piece causing check
+            pieceCausingCheck.BackColor = checkPieceColor;                                                   //highlight the piece causing check
             if (whitePlayerTurn)
             {
-                gridTLP.GetControlFromPosition(whiteKingCol, whiteKingRow).BackColor= checkPieceColor;      //highlight the king that is in check
+                gridTLP.GetControlFromPosition(whiteKingCol, whiteKingRow).BackColor = checkPieceColor;      //highlight the king that is in check
             }
             else
             {
@@ -220,14 +278,8 @@ namespace WinFormsChess
         {   //called after each turn
             moveCount++;
             movesLabel.Text = "Move number: " + moveCount;
-            if (!whitePlayerTurn)
-            {
-                playerTurnLabel.Text = "Black player: it's your turn.";
-            }
-            else
-            {
-                playerTurnLabel.Text = "White player: it's your turn.";
-            }
+            playerTurnLabel.Text = "White player: it's your turn.";
+
         }
         public void checkMateSequence()
         {
@@ -236,7 +288,8 @@ namespace WinFormsChess
             movesLabel.Visible = false;                 //^
             gameTimeLabel.Visible = false;              //^
             timer.Stop();                               //halt the timer to display the time the game took
-            if (whitePlayerTurn) {                        
+            if (whitePlayerTurn)
+            {
                 checkMateLabel.Text = "Black player is the winner! Play again?";            //white is in check
             }
             else
@@ -254,7 +307,7 @@ namespace WinFormsChess
             public int startCol;        //the column the control was located in
             public string pieceType;    //"eg. 'Pawn' or 'Rook'
             public string pieceColor;   //either 'b' or 'w'
-            public pictureBoxInformation(int _startCol, int _startRow, string _pieceType, string _pieceColor) 
+            public pictureBoxInformation(int _startCol, int _startRow, string _pieceType, string _pieceColor)
             {
                 startCol = _startCol;
                 startRow = _startRow;
@@ -321,9 +374,9 @@ namespace WinFormsChess
             string pieceType = pieceTitle.Substring(1, pieceTitle.Length - 1);
             pictureBoxInformation currentPiece = new pictureBoxInformation(startCol, startRow, pieceType, pieceColor);
             //TODO: xác định cái Piece hiện tại từ col, row, tên, màu
-            findReachableSquares(currentPiece, isCauseCheck);                                 //use the newly created pictureBoxInformation to find which squares are reachable
+            findReachableSquares(currentPiece);                                 //use the newly created pictureBoxInformation to find which squares are reachable
         }
-        private void findReachableSquares(pictureBoxInformation currentMove, bool isCauseCheck)
+        private void findReachableSquares(pictureBoxInformation currentMove)
         {
             switch (currentMove.pieceType)  //the possible moves depend on the piece type
             {
@@ -333,177 +386,119 @@ namespace WinFormsChess
 
                         if (canItMoveHere(0, -1, currentMove))      //canItMoveHere highlights only the cells we can move to based on the supplied movement vector arguments
                         {                                           //It returns true if the move is viable, otherwise false
-                            addListPosssibleMove(0, -1, currentMove, isCauseCheck);
-                            
+
+
                             if (currentMove.startRow == 6)          //edge case where pawn is in start row and may be able to move 2 units
                             {
-                                if (canItMoveHere(0, -2, currentMove))
-                                    addListPosssibleMove(0, -2, currentMove, isCauseCheck);
+                                canItMoveHere(0, -2, currentMove);
                             }
                         }
-                        if (canItMoveHere(-1, -1, currentMove)) //now test for diagonal attack moves
-                        {
-                            addListPosssibleMove(-1, -1, currentMove, isCauseCheck);
-                        }
+                        canItMoveHere(-1, -1, currentMove); //now test for diagonal attack moves
+                        canItMoveHere(1, -1, currentMove); //now test for diagonal attack moves
 
-                        if (canItMoveHere(1, -1, currentMove)) //now test for diagonal attack moves
-                        {
-                            addListPosssibleMove(1, -1, currentMove, isCauseCheck);
-                        }
                     }
                     else                                            //alternate situation where the tag of the active control begins with 'b' - it is a black piece
                     {
                         if (canItMoveHere(0, 1, currentMove))
                         {
-                            addListPosssibleMove(0, 1, currentMove, isCauseCheck);
+
                             if (currentMove.startRow == 1)
-                            {                                   
-                                if (canItMoveHere(0, 2, currentMove))
-                                {
-                                    addListPosssibleMove(0, 2, currentMove, isCauseCheck);
-                                }
+                            {
+                                canItMoveHere(0, 2, currentMove);
+
                             }
                         }
-                        if (canItMoveHere(-1, 1, currentMove))
-                        {
-                            addListPosssibleMove(-1, 1, currentMove, isCauseCheck);
-                        }
+                        canItMoveHere(-1, 1, currentMove);
 
-                        if (canItMoveHere(1, 1, currentMove))
-                        {
-                            addListPosssibleMove(1, 1, currentMove, isCauseCheck);
-                        }
+
+                        canItMoveHere(1, 1, currentMove);
+
                     }
                     break;
                 case "Knight":
                     for (int i = 0; i < 8; i++)                     //iterate through the global knightRowVector & knightColumnVector arrays to get the dy and dx values
                     {
-                        if(canItMoveHere(knightRowVector[i], knightColumnVector[i], currentMove))
-                        {
-                            addListPosssibleMove(knightRowVector[i], knightColumnVector[i], currentMove, isCauseCheck);
-                        }
-                        
+                        canItMoveHere(knightRowVector[i], knightColumnVector[i], currentMove);
                     }
                     break;
                 case "Rook":
-                    testOrthogonal(currentMove, isCauseCheck);                    //a subfuction that handles vertical only and horizontal only moves
+                    testOrthogonal(currentMove);                    //a subfuction that handles vertical only and horizontal only moves
                     break;
                 case "Bishop":
-                    testDiagonal(currentMove, isCauseCheck);                      //a subfuction that handles moves that are both vertical and horizontal
+                    testDiagonal(currentMove);                      //a subfuction that handles moves that are both vertical and horizontal
                     break;
                 case "Queen":
-                    testOrthogonal(currentMove, isCauseCheck);
-                    testDiagonal(currentMove, isCauseCheck);
+                    testOrthogonal(currentMove);
+                    testDiagonal(currentMove);
                     break;
                 case "King":
-                    testOrthogonal(currentMove, isCauseCheck);
-                    testDiagonal(currentMove, isCauseCheck);
+                    testOrthogonal(currentMove);
+                    testDiagonal(currentMove);
                     break;
             }
         }
 
-        private void testOrthogonal(pictureBoxInformation currentMove, bool isCauseCheck)
+        private void testOrthogonal(pictureBoxInformation currentMove)
         {
-            bool isPossibleMove;
+
             int offset = 1;                                     //start off to the right of the active control and move right
-            while (isPossibleMove = canItMoveHere(offset, 0, currentMove))       //call the function repeatedly until we find a non reachable square (or the edge of the board)
+            while (canItMoveHere(offset, 0, currentMove))      //call the function repeatedly until we find a non reachable square (or the edge of the board)
             {
-                if (isPossibleMove)
-                {
-                    addListPosssibleMove(offset, 0, currentMove, isCauseCheck);
-                }
+
                 offset++;
             }
             offset = -1;                                        //start the left of the active control and move left
-            while (isPossibleMove = canItMoveHere(offset, 0, currentMove))
+            while (canItMoveHere(offset, 0, currentMove))
             {
-                if (isPossibleMove)
-                {
-                    addListPosssibleMove(offset, 0, currentMove, isCauseCheck);
-                }
+
                 offset--;
             }
             offset = 1;                                         //start below the active control and move down
-            while (isPossibleMove = canItMoveHere(0, offset, currentMove))
+            while (canItMoveHere(0, offset, currentMove))
             {
-                if (isPossibleMove)
-                {
-                    addListPosssibleMove(0, offset, currentMove, isCauseCheck);
-                }
+
                 offset++;
             }
             offset = -1;                                        //start above the active control and move up
-            while (isPossibleMove = canItMoveHere(0, offset, currentMove))
+            while (canItMoveHere(0, offset, currentMove))
             {
-                if (isPossibleMove)
-                {
-                    addListPosssibleMove(0, offset, currentMove, isCauseCheck);
-                }
+
                 offset--;
             }
         }
-        private void testDiagonal(pictureBoxInformation currentMove, bool isCauseCheck)
+        private void testDiagonal(pictureBoxInformation currentMove)
         {
-            bool isPossibleMove;
+
             int offset = 1;                                     //start below and to the right of the active control and move down and right
-            while (isPossibleMove = canItMoveHere(offset, offset, currentMove))
+            while (canItMoveHere(offset, offset, currentMove))
             {
-                if (isPossibleMove)
-                {
-                    addListPosssibleMove(offset, offset, currentMove, isCauseCheck);
-                }
+
                 offset++;
             }
             offset = 1;                                         //start above and to the right of the active control and move up and right
-            while (isPossibleMove = canItMoveHere(offset, -offset, currentMove))
+            while (canItMoveHere(offset, -offset, currentMove))
             {
-                if (isPossibleMove)
-                {
-                    addListPosssibleMove(offset, -offset, currentMove, isCauseCheck);
-                }
+
                 offset++;
             }
             offset = 1;                                         //start below and to the left of the active control and move down and left
-            while (isPossibleMove = canItMoveHere(-offset, offset, currentMove))
+            while (canItMoveHere(-offset, offset, currentMove))
             {
-                if (isPossibleMove)
-                {
-                    addListPosssibleMove(-offset, offset, currentMove, isCauseCheck);
-                }
+
                 offset++;
             }
             offset = 1;                                         //start above and to the left of the active control and move up and left
-            while (isPossibleMove = canItMoveHere(-offset, -offset, currentMove))
+            while (canItMoveHere(-offset, -offset, currentMove))
             {
-                if (isPossibleMove)
-                {
-                    addListPosssibleMove(-offset, -offset, currentMove, isCauseCheck);
-                }
+
                 offset++;
             }
         }
 
-        private void addListPosssibleMove(int columnVector, int rowVector, pictureBoxInformation currentMove, bool isCauseCheck)
-        {
-            
-            int col = currentMove.startCol + columnVector;      //the column containing the PictureBox we are testing
-            int row = currentMove.startRow + rowVector;         //the row containing the PictureBox we are testing
-            //Console.WriteLine("{0}-{1}", col, row, isCauseCheck);
-            //var new_value = new List<LocationSelected>();
-            
-            if (isCauseCheck)
-            {                
-                PossibleCauseCheck.Add(new LocationSelected {row = row, col = col});
-            }
-            else
-            {
-                PossibleMove.Add(new LocationSelected { row = row, col = col });
-            } 
-
-
-        }
         private bool canItMoveHere(int columnVector, int rowVector, pictureBoxInformation currentMove)
         {
+            isFindingCheck = false;
+
             int col = currentMove.startCol + columnVector;      //the column containing the PictureBox we are testing
             int row = currentMove.startRow + rowVector;         //the row containing the PictureBox we are testing
 
@@ -518,6 +513,9 @@ namespace WinFormsChess
                     if (!(currentMove.pieceType == "Pawn" && columnVector != 0))        //check we are not in the edge case where pawn cannot move diagonal into empty space
                     {
                         candidateMoves++;                                               //note that the move is viable (used when function if called to see if a player is in check)
+
+                        //TODO: aDD
+
                         destination.BackColor = reachableSquareColor;              //highlight the cell (used when a player has chosen a piece to move)
 
                         Control startSquare = gridTLP.GetControlFromPosition(currentMove.startCol, currentMove.startRow);       //get a handle on the start square Control
@@ -539,7 +537,10 @@ namespace WinFormsChess
                         destination.Tag = startSquare.Tag;              //temporarily update the tags as if the player has moved to test for check
                         startSquare.Tag = "empty";                      //...they will be reset after the testForCheck function
 
+                        int tmp = movesThatCauseCheck;
                         testForCheck();                   //test whether this move into an empty square will put self into check - if so, increment the movesThatCauseCheck function
+                        if (movesThatCauseCheck != tmp) isFindingCheck = true;
+                        if (!isFindingCheck) PossibleMove.Add(new LocationSelected { currentPiece = currentMove, row = row, col = col });
 
                         startSquare.Tag = destination.Tag;              //the next few lines reset the board back to its state before the move          
                         destination.Tag = endSquareTitle;
@@ -585,7 +586,12 @@ namespace WinFormsChess
                         string endSquareTitle = (string)destination.Tag;
                         destination.Tag = startSquare.Tag;              //temporarily update the tags as if the player has moved to test for check
                         startSquare.Tag = "empty";                      //...they will be reset after the testForCheck function
+
+                        int tmp = movesThatCauseCheck;
                         testForCheck();                                 //test whether this attacking move will put self into check - if so, increment the movesThatCauseCheck function
+                        if (movesThatCauseCheck != tmp) isFindingCheck = true;
+                        if (!isFindingCheck) PossibleMove.Add(new LocationSelected { currentPiece = currentMove, row = row, col = col });
+
                         startSquare.Tag = destination.Tag;              //the next few lines reset the board back to its state before the move 
                         destination.Tag = endSquareTitle;
                         if ((string)startSquare.Tag == "wKing")
@@ -608,7 +614,7 @@ namespace WinFormsChess
             //it does this my starting at the king and testing if it could reach any opponent pieces by using a move that the opponent piece could make
             //it delegates to subfunctions that do this, in a similar way to scanForAvailableMoves()
 
-            
+
             pieceCausingCheck = null;           //initialise to null. This will return a piece causing check, if there is one. This is used to highlight that piece when a player
                                                 //...has attempted a move that causes check
             Control kingToCheck = gridTLP.GetControlFromPosition(whiteKingCol, whiteKingRow);
@@ -616,7 +622,7 @@ namespace WinFormsChess
             if (!whitePlayerTurn)
             {
                 kingToCheck = gridTLP.GetControlFromPosition(blackKingCol, blackKingRow);
-                
+
             }
             int startRow = gridTLP.GetRow(kingToCheck);
             int startCol = gridTLP.GetColumn(kingToCheck);
@@ -629,9 +635,9 @@ namespace WinFormsChess
 
         private void checkSearch(pictureBoxInformation currentMove)
         {
-            
+
             //explore moving Orthogonally
-            int offset = 1;             
+            int offset = 1;
             while (!foundCheck && exploreSquares(offset, 0, currentMove, "Ortho"))  //ortho denotes an orthogonal move
             {                       //the foundcheck bool is set to true when check is found - this prevents movesThatCauseCheck from being incremented more than once on the same square
                 offset++;           //...such as when the king would be put in check my more than one opponent piece
@@ -642,6 +648,7 @@ namespace WinFormsChess
                 offset--;
             }
             offset = 1;
+
             while (!foundCheck && exploreSquares(0, offset, currentMove, "Ortho"))
             {
                 offset++;
@@ -699,12 +706,13 @@ namespace WinFormsChess
                     exploreSquares(1, 1, currentMove, "Pawn");
                 }
             }
+
             foundCheck = false;
         }
 
         private bool exploreSquares(int columnVector, int rowVector, pictureBoxInformation currentMove, string attackVulnerableTo)
         {
-           
+
 
             int col = currentMove.startCol + columnVector;          //the column containing the PictureBox we are testing
             int row = currentMove.startRow + rowVector;             //the row containing the PictureBox we are testing
@@ -720,8 +728,9 @@ namespace WinFormsChess
 
                 if (firstLetterOfDestinationTag == "e")             //case empty cell
                 {
+
                     return true;                                    //square cannot attack king (nothing there!) but perhaps the next one can
-                    
+
                 }
                 else if (firstLetterOfDestinationTag != currentMove.pieceColor)         //found an opponent piece
                 {
@@ -729,10 +738,8 @@ namespace WinFormsChess
                     {
                         if (destinationPieceType == "Rook" || destinationPieceType == "Queen")          //pieces that can move more than 1 square in that direction
                         {
-                            Console.WriteLine("Kill here!");
-
                             // TODO:?
-                            movesThatCauseCheck++;                              
+                            movesThatCauseCheck++;
                             pieceCausingCheck = (PictureBox)destination;    //get a handle on this so we can choose to highlight the piece causing check
                             foundCheck = true;           //important to change this to true - otherwise the calling function could count the king as being in check more than once for this move
                             return false;                //..for example when the king is in check by both a Rook and a Queen
@@ -745,7 +752,7 @@ namespace WinFormsChess
                             return false;
                         }
                     }
-                    if (attackVulnerableTo == "Diag")       
+                    if (attackVulnerableTo == "Diag")
                     {
                         if (destinationPieceType == "Bishop" || destinationPieceType == "Queen")    //pieces that can move more than 1 square in that direction
                         {
@@ -782,6 +789,8 @@ namespace WinFormsChess
                             return false;
                         }
                     }
+
+
                     return false;
                 }
             }
@@ -818,6 +827,7 @@ namespace WinFormsChess
 
                     if ((string)endSquareToCheck.Tag == "wPawn" || (string)endSquareToCheck.Tag == "bPawn")
                     {
+                        Console.WriteLine((string)endSquareToCheck.Tag + " reached");
                         endSquareToCheck.BackColor = promotionPieceColor;    //highlight the pawn
                         return endSquareToCheck;
                     }
@@ -836,22 +846,26 @@ namespace WinFormsChess
                 {
                     if (controlTag[0] == 'w')
                     {
+                        Console.WriteLine("White");
                         c.Image = (System.Drawing.Bitmap)Properties.Resources.ResourceManager.GetObject((string)c.Tag);
                     }
                     else
                     {
+                        Console.WriteLine("White");
                         c.Tag = 'w' + controlTag.Substring(1);
                         c.Image = (System.Drawing.Bitmap)Properties.Resources.ResourceManager.GetObject((string)c.Tag);
                     }
                 }
                 else
                 {
+                    Console.WriteLine("Black");
                     if (controlTag[0] == 'b')
                     {
                         c.Image = (System.Drawing.Bitmap)Properties.Resources.ResourceManager.GetObject((string)c.Tag);
                     }
                     else
                     {
+                        Console.WriteLine("Black");
                         c.Tag = 'b' + controlTag.Substring(1);
                         c.Image = (System.Drawing.Bitmap)Properties.Resources.ResourceManager.GetObject((string)c.Tag);
                     }
@@ -871,12 +885,13 @@ namespace WinFormsChess
 
         private void onPromotionClick(object sender, EventArgs e)
         {           //player has selected a piece they want to turn their pawn into
+            Console.WriteLine("Run here...");
             PictureBox selection = sender as PictureBox;
             secondSelection.Tag = selection.Tag;        //secondSelection is a handle on the pawn they moved to the end - copy the details of the selected piece onto it
             secondSelection.Image = selection.Image;    //^
 
             promotionTLP.Visible = false;               //hide and disable the promotionTLP and label
-            promotionTLP.Enabled = false;               
+            promotionTLP.Enabled = false;
             piecePromotionLabel.Visible = false;
 
             gridTLP.Enabled = true;                     //re-enable and display the normal grid and labels
@@ -884,15 +899,19 @@ namespace WinFormsChess
             movesLabel.Visible = true;                  //^
             gameTimeLabel.Visible = true;               //^
             whitePlayerTurn = !whitePlayerTurn;         //switch player back, ready for the next move
+
             movesThatCauseCheck = 0;                    //reset this for this to zero for the upcoming selectAllPieces()
             candidateMoves = 0;                         //^
+            PossibleMove.Clear();
             selectAllPieces();                          //now need to test how many moves are possible for the opponent, and how many would cause check
             unHighlightMoves();
+            callList(PossibleMove);
             if (movesThatCauseCheck == candidateMoves)
             {
                 MessageBox.Show("CheckMate!");
                 checkMateSequence();
             }
+            onBot();
         }
 
         private void timer_Tick(object sender, EventArgs e)
